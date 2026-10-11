@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Home Assistant local/dev state
+.storage/
+*.log
+home-assistant_v2.db*
+secrets.yaml
+
+# Build / package artifacts
+build/
+dist/
+*.egg-info/

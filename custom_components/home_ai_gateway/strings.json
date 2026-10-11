@@ -1,0 +1,39 @@
+{
+  "title": "Home AI Gateway",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect Home AI Gateway",
+        "description": "Configure the local Home AI Gateway app.",
+        "data": {
+          "gateway_url": "Gateway URL",
+          "client_token": "Client token"
+        },
+        "data_description": {
+          "gateway_url": "Base URL of the Home AI Gateway app, for example http://192.168.68.112:8787",
+          "client_token": "Client token configured in the Home AI Gateway app"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Home AI Gateway",
+        "description": "Update the gateway connection and validate it before saving.",
+        "data": {
+          "gateway_url": "Gateway URL",
+          "client_token": "Client token"
+        },
+        "data_description": {
+          "gateway_url": "Base URL of the Home AI Gateway app",
+          "client_token": "Client token configured in the Home AI Gateway app"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to Home AI Gateway",
+      "invalid_auth": "The client token was rejected",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "Home AI Gateway is already configured"
+    }
+  }
+}

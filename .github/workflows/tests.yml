@@ -1,0 +1,67 @@
+name: Integration regression tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Compile Python sources
+        run: |
+          python -m compileall -q custom_components tests
+
+      - name: Run contract and protocol tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          for test_file in tests/*_test.py; do
+            echo "==> ${test_file}"
+            python "${test_file}"
+          done
+
+
+  ha-2026-9-4:
+    name: Home Assistant 2026.9.4 compatibility
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out integration
+        uses: actions/checkout@v4
+        with:
+          path: integration
+
+      - name: Check out Home Assistant Core 2026.9.4
+        uses: actions/checkout@v4
+        with:
+          repository: home-assistant/core
+          ref: 2026.9.4
+          path: ha-core
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Verify exact Home Assistant API contracts
+        working-directory: integration
+        env:
+          HA_CORE_PATH: ../ha-core
+        run: python tests/ha_2026_9_4_runtime.py
