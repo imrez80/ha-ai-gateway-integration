@@ -48,6 +48,12 @@ Current integration version: **0.6.2**
 
 For now the integration version follows the Home AI Gateway app version. The repositories may use independent versioning later if their release cadence diverges.
 
+## Home Assistant compatibility
+
+Minimum supported Home Assistant Core version: **2026.9.4**.
+
+The integration is explicitly checked in CI against Home Assistant Core 2026.9.4. Upgrading to the 2026.10 series is **not required** for Home AI Gateway Integration 0.6.2. Newer Home Assistant releases can be adopted independently after they are considered stable for the installation.
+
 ## Installation
 
 ### Existing manual installation
