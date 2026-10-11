@@ -7,7 +7,8 @@
   ],
   "config_flow": true,
   "dependencies": [
-    "conversation"
+    "conversation",
+    "http"
   ],
   "documentation": "https://github.com/imrez80/ha-ai-gateway-integration",
   "issue_tracker": "https://github.com/imrez80/ha-ai-gateway-integration/issues",
