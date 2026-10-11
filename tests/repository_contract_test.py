@@ -63,6 +63,14 @@ def main():
         "Home AI Gateway"
     )
 
+    assert (
+        hacs[
+            "homeassistant"
+        ]
+        ==
+        "2026.9.4"
+    )
+
     required = {
         "__init__.py",
         "config_flow.py",
