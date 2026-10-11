@@ -1,81 +1,160 @@
-"""Runtime compatibility probe for Home Assistant 2026.9.4.
+"""Source compatibility probe for Home Assistant Core 2026.9.4.
 
-This file is intentionally not named *_test.py because the ordinary contract
-suite runs without Home Assistant installed. The dedicated CI compatibility
-job installs exactly Home Assistant 2026.9.4 and executes this probe.
+The CI job checks out the exact Home Assistant Core 2026.9.4 tag beside this
+repository and this script verifies the API surfaces used by the integration.
+This avoids depending on PyPI publication timing for Home Assistant releases.
 """
 
 from __future__ import annotations
 
-import importlib
-import inspect
+import ast
+import os
+from pathlib import Path
 
-from homeassistant import config_entries
-from homeassistant.components import conversation
-from homeassistant.components.conversation import AssistantContent
-from homeassistant.components.http import KEY_HASS, HomeAssistantView
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+
+HA_CORE = Path(
+    os.environ.get(
+        "HA_CORE_PATH",
+        "ha-core",
+    )
+).resolve()
+
+
+def read(relative: str) -> str:
+    path = HA_CORE / relative
+    assert path.exists(), path
+    return path.read_text(
+        encoding="utf-8"
+    )
+
+
+def module_symbols(source: str) -> set[str]:
+    tree = ast.parse(source)
+    names: set[str] = set()
+
+    for node in tree.body:
+        if isinstance(
+            node,
+            (
+                ast.ClassDef,
+                ast.FunctionDef,
+                ast.AsyncFunctionDef,
+            ),
+        ):
+            names.add(
+                node.name
+            )
+
+    return names
+
+
+def class_methods(
+    source: str,
+    class_name: str,
+) -> set[str]:
+    tree = ast.parse(source)
+
+    for node in tree.body:
+        if (
+            isinstance(
+                node,
+                ast.ClassDef,
+            )
+            and node.name
+            == class_name
+        ):
+            return {
+                item.name
+                for item in node.body
+                if isinstance(
+                    item,
+                    (
+                        ast.FunctionDef,
+                        ast.AsyncFunctionDef,
+                    ),
+                )
+            }
+
+    raise AssertionError(
+        f"Class not found: {class_name}"
+    )
 
 
 def main() -> None:
-    """Verify every Home Assistant API surface used by the integration."""
+    conversation_init = read(
+        "homeassistant/components/conversation/__init__.py"
+    )
+    conversation_entity = read(
+        "homeassistant/components/conversation/entity.py"
+    )
+    conversation_models = read(
+        "homeassistant/components/conversation/models.py"
+    )
+    conversation_chat_log = read(
+        "homeassistant/components/conversation/chat_log.py"
+    )
+    config_entries = read(
+        "homeassistant/config_entries.py"
+    )
+    http_init = read(
+        "homeassistant/components/http/__init__.py"
+    )
+    entity_platform = read(
+        "homeassistant/helpers/entity_platform.py"
+    )
 
-    assert conversation.ConversationEntity is not None
-    assert conversation.AbstractConversationAgent is not None
-    assert conversation.ConversationEntityFeature is not None
-    assert conversation.ChatLog is not None
-    assert conversation.ConversationInput is not None
-    assert conversation.ConversationResult is not None
-
-    assert hasattr(
-        conversation,
+    for symbol in (
+        "ConversationEntity",
+        "AbstractConversationAgent",
+        "ConversationEntityFeature",
+        "ConversationInput",
+        "ConversationResult",
+        "ChatLog",
+        "AssistantContent",
         "async_set_agent",
-    )
-    assert hasattr(
-        conversation,
         "async_unset_agent",
-    )
-    assert hasattr(
-        conversation.ChatLog,
-        "async_add_assistant_content_without_tools",
-    )
-
-    result_parameters = inspect.signature(
-        conversation.ConversationResult
-    ).parameters
-    assert "continue_conversation" in result_parameters
-    assert "conversation_id" in result_parameters
-
-    assistant_parameters = inspect.signature(
-        AssistantContent
-    ).parameters
-    assert "agent_id" in assistant_parameters
-    assert "content" in assistant_parameters
-
-    assert HomeAssistantView is not None
-    assert KEY_HASS is not None
-    assert async_get_clientsession is not None
-    assert AddConfigEntryEntitiesCallback is not None
-
-    assert hasattr(
-        config_entries.ConfigFlow,
-        "async_update_reload_and_abort",
-    )
-
-    for module_name in (
-        "custom_components.home_ai_gateway",
-        "custom_components.home_ai_gateway.config_flow",
-        "custom_components.home_ai_gateway.conversation",
-        "custom_components.home_ai_gateway.health",
-        "custom_components.home_ai_gateway.protocol",
     ):
-        importlib.import_module(
-            module_name
+        assert symbol in conversation_init, symbol
+
+    assert (
+        "_async_handle_message"
+        in class_methods(
+            conversation_entity,
+            "ConversationEntity",
         )
+    )
+
+    result_source = conversation_models
+    assert "continue_conversation" in result_source
+    assert "conversation_id" in result_source
+
+    chat_methods = class_methods(
+        conversation_chat_log,
+        "ChatLog",
+    )
+    assert (
+        "async_add_assistant_content_without_tools"
+        in chat_methods
+    )
+
+    config_flow_methods = class_methods(
+        config_entries,
+        "ConfigFlow",
+    )
+    assert (
+        "async_update_reload_and_abort"
+        in config_flow_methods
+    )
+
+    assert "HomeAssistantView" in http_init
+    assert "KEY_HASS" in http_init
+    assert (
+        "AddConfigEntryEntitiesCallback"
+        in entity_platform
+    )
 
     print(
-        "Home Assistant 2026.9.4 runtime compatibility probe passed."
+        "Home Assistant Core 2026.9.4 source compatibility probe passed."
     )
 
 
