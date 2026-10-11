@@ -1,0 +1,39 @@
+{
+  "title": "Home AI Gateway",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Home AI Gateway csatlakoztatása",
+        "description": "A helyi Home AI Gateway app beállítása.",
+        "data": {
+          "gateway_url": "Gateway URL",
+          "client_token": "Kliens token"
+        },
+        "data_description": {
+          "gateway_url": "A Home AI Gateway app alap URL-je, például http://192.168.68.112:8787",
+          "client_token": "A Home AI Gateway appban beállított kliens token"
+        }
+      },
+      "reconfigure": {
+        "title": "Home AI Gateway újrakonfigurálása",
+        "description": "A gateway kapcsolat módosítása és ellenőrzése mentés előtt.",
+        "data": {
+          "gateway_url": "Gateway URL",
+          "client_token": "Kliens token"
+        },
+        "data_description": {
+          "gateway_url": "A Home AI Gateway app alap URL-je",
+          "client_token": "A Home AI Gateway appban beállított kliens token"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "A Home AI Gateway nem érhető el",
+      "invalid_auth": "A kliens tokent a gateway elutasította",
+      "unknown": "Váratlan hiba történt"
+    },
+    "abort": {
+      "already_configured": "A Home AI Gateway már be van állítva"
+    }
+  }
+}
