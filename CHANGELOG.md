@@ -18,6 +18,7 @@
 - Regression/contract tests
 - GitHub Actions syntax and contract test workflow
 - Hassfest workflow
+- Exact Home Assistant 2026.9.4 runtime compatibility CI probe
 
 ### Security
 
@@ -27,6 +28,6 @@
 
 ### Compatibility
 
-- Home Assistant minimum version declared for HACS: 2026.10.0
+- Home Assistant minimum version declared for HACS: 2026.9.4
 - Integration version follows Home AI Gateway app version for now
 - Installing or updating the custom integration requires one Home Assistant Core restart
