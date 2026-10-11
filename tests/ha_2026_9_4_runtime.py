@@ -1,13 +1,13 @@
 """Source compatibility probe for Home Assistant Core 2026.9.4.
 
 The CI job checks out the exact Home Assistant Core 2026.9.4 tag beside this
-repository and this script verifies the API surfaces used by the integration.
-This avoids depending on PyPI publication timing for Home Assistant releases.
+repository and verifies the API surfaces used by the integration. The probe is
+intentionally source-based: Home Assistant Core may target a newer Python
+syntax than the generic GitHub runner used for these lightweight checks.
 """
 
 from __future__ import annotations
 
-import ast
 import os
 from pathlib import Path
 
@@ -28,56 +28,12 @@ def read(relative: str) -> str:
     )
 
 
-def module_symbols(source: str) -> set[str]:
-    tree = ast.parse(source)
-    names: set[str] = set()
-
-    for node in tree.body:
-        if isinstance(
-            node,
-            (
-                ast.ClassDef,
-                ast.FunctionDef,
-                ast.AsyncFunctionDef,
-            ),
-        ):
-            names.add(
-                node.name
-            )
-
-    return names
-
-
-def class_methods(
+def require(
     source: str,
-    class_name: str,
-) -> set[str]:
-    tree = ast.parse(source)
-
-    for node in tree.body:
-        if (
-            isinstance(
-                node,
-                ast.ClassDef,
-            )
-            and node.name
-            == class_name
-        ):
-            return {
-                item.name
-                for item in node.body
-                if isinstance(
-                    item,
-                    (
-                        ast.FunctionDef,
-                        ast.AsyncFunctionDef,
-                    ),
-                )
-            }
-
-    raise AssertionError(
-        f"Class not found: {class_name}"
-    )
+    *needles: str,
+) -> None:
+    for needle in needles:
+        assert needle in source, needle
 
 
 def main() -> None:
@@ -102,8 +58,12 @@ def main() -> None:
     entity_platform = read(
         "homeassistant/helpers/entity_platform.py"
     )
+    aiohttp_client = read(
+        "homeassistant/helpers/aiohttp_client.py"
+    )
 
-    for symbol in (
+    require(
+        conversation_init,
         "ConversationEntity",
         "AbstractConversationAgent",
         "ConversationEntityFeature",
@@ -113,44 +73,49 @@ def main() -> None:
         "AssistantContent",
         "async_set_agent",
         "async_unset_agent",
-    ):
-        assert symbol in conversation_init, symbol
-
-    assert (
-        "_async_handle_message"
-        in class_methods(
-            conversation_entity,
-            "ConversationEntity",
-        )
     )
 
-    result_source = conversation_models
-    assert "continue_conversation" in result_source
-    assert "conversation_id" in result_source
+    require(
+        conversation_entity,
+        "class ConversationEntity",
+        "async def _async_handle_message",
+    )
 
-    chat_methods = class_methods(
+    require(
+        conversation_models,
+        "class ConversationInput",
+        "class ConversationResult",
+        "conversation_id:",
+        "continue_conversation:",
+    )
+
+    require(
         conversation_chat_log,
-        "ChatLog",
-    )
-    assert (
-        "async_add_assistant_content_without_tools"
-        in chat_methods
+        "class AssistantContent",
+        "class ChatLog",
+        "def async_add_assistant_content_without_tools",
     )
 
-    config_flow_methods = class_methods(
+    require(
         config_entries,
-        "ConfigFlow",
-    )
-    assert (
-        "async_update_reload_and_abort"
-        in config_flow_methods
+        "class ConfigFlow",
+        "def async_update_reload_and_abort",
     )
 
-    assert "HomeAssistantView" in http_init
-    assert "KEY_HASS" in http_init
-    assert (
-        "AddConfigEntryEntitiesCallback"
-        in entity_platform
+    require(
+        http_init,
+        "KEY_HASS",
+        "HomeAssistantView",
+    )
+
+    require(
+        entity_platform,
+        "class AddConfigEntryEntitiesCallback",
+    )
+
+    require(
+        aiohttp_client,
+        "def async_get_clientsession",
     )
 
     print(
